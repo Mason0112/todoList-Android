@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.mason.todolist.dto.LoginResponseDto
 import com.mason.todolist.dto.UserRegAndLoginDto
 import com.mason.todolist.service.AuthApiService
+import com.mason.todolist.service.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -17,7 +18,7 @@ sealed class AuthUiState {
     data class Error(val message: String) : AuthUiState()
 }
 
-class AuthViewModel(private val authApiService: AuthApiService) : ViewModel() {
+class AuthViewModel(private val authRepository: AuthRepository) : ViewModel() {
 
     // MutableStateFlow to hold and emit the current UI state
     private val _uiState = MutableStateFlow<AuthUiState>(AuthUiState.Idle)
@@ -32,7 +33,7 @@ class AuthViewModel(private val authApiService: AuthApiService) : ViewModel() {
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
             try {
-                val response = authApiService.login(request)
+                val response = authRepository.login(request)
                 _uiState.value = AuthUiState.Success(response)
             } catch (e: Exception) {
                 _uiState.value = AuthUiState.Error(e.message ?: "Login failed")
@@ -48,7 +49,7 @@ class AuthViewModel(private val authApiService: AuthApiService) : ViewModel() {
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
             try {
-                val response = authApiService.register(request)
+                val response = authRepository.register(request)
                 _uiState.value = AuthUiState.Success(response)
             } catch (e: Exception) {
                 _uiState.value = AuthUiState.Error(e.message ?: "Registration failed")

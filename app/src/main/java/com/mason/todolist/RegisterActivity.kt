@@ -34,16 +34,24 @@ import com.mason.todolist.ui.theme.TodoListTheme
 import com.mason.todolist.viewModel.AuthViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mason.todolist.dto.UserRegAndLoginDto
+import com.mason.todolist.service.AuthApiService
+import com.mason.todolist.service.AuthRepository
 import com.mason.todolist.service.RetrofitInstance
+import com.mason.todolist.token.TokenManager
 import com.mason.todolist.viewModel.AuthUiState
 import com.mason.todolist.viewModel.AuthViewModelFactory
 
 class RegisterActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // 1. 創建你的 API service 實例
-        val authApiService = RetrofitInstance.authApiService
+        // 取得 Application Context
+        val appContext = applicationContext
+        val tokenManager = TokenManager(appContext) // 將 Application Context 傳入
 
+        // 建立所有依賴物件
+        val retrofit = RetrofitInstance.create(tokenManager)
+        val authApiService = retrofit.create(AuthApiService::class.java)
+        val authRepository = AuthRepository(authApiService, tokenManager)
         enableEdgeToEdge()
         setContent {
             TodoListTheme {
@@ -51,7 +59,7 @@ class RegisterActivity : ComponentActivity() {
                     // 在這裡調用我們新建立的註冊畫面
                     RegisterScreen(
                         modifier = Modifier.padding(innerPadding),
-                        authViewModel = viewModel(factory = AuthViewModelFactory(authApiService))
+                        authViewModel = viewModel(factory = AuthViewModelFactory(authRepository))
                     )
                 }
             }

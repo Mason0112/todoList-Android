@@ -18,6 +18,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,17 +30,36 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.mason.todolist.dto.UserRegAndLoginDto
+import com.mason.todolist.service.AuthApiService
+import com.mason.todolist.service.AuthRepository
+import com.mason.todolist.service.RetrofitInstance
+import com.mason.todolist.token.TokenManager
 import com.mason.todolist.ui.theme.TodoListTheme
+import com.mason.todolist.viewModel.AuthUiState
+import com.mason.todolist.viewModel.AuthViewModel
+import com.mason.todolist.viewModel.AuthViewModelFactory
 
 class LoginActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // 取得 Application Context
+        val appContext = applicationContext
+        val tokenManager = TokenManager(appContext) // 將 Application Context 傳入
+
+        // 建立所有依賴物件
+        val retrofit = RetrofitInstance.create(tokenManager)
+        val authApiService = retrofit.create(AuthApiService::class.java)
+        val authRepository = AuthRepository(authApiService, tokenManager)
+
         enableEdgeToEdge()
         setContent {
             TodoListTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     LoginScreen(
-                        modifier = Modifier.padding(innerPadding)
+                        modifier = Modifier.padding(innerPadding),
+                        authViewModel = viewModel(factory = AuthViewModelFactory(authRepository))
                     )
                 }
             }
@@ -48,7 +68,9 @@ class LoginActivity : ComponentActivity() {
 }
 
 @Composable
-fun LoginScreen(modifier: Modifier = Modifier) {
+fun LoginScreen(modifier: Modifier = Modifier,
+                authViewModel: AuthViewModel = viewModel()) {
+    val uiState by authViewModel.uiState.collectAsState()
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
@@ -84,14 +106,35 @@ fun LoginScreen(modifier: Modifier = Modifier) {
             modifier = Modifier.fillMaxWidth()
         )
 
+        when (uiState) {
+            is AuthUiState.Loading -> {
+                Text("登入中...")
+                // You could also show a CircularProgressIndicator here
+            }
+            is AuthUiState.Success -> {
+                // Navigate to the next screen or show a success message
+                Text("登入成功！")
+                // You might want to navigate to the main screen here.
+                // For example: navController.navigate("main_screen")
+            }
+            is AuthUiState.Error -> {
+                // Show an error message
+                val errorMessage = (uiState as AuthUiState.Error).message
+                Text("登入失敗: $errorMessage", color = MaterialTheme.colorScheme.error)
+            }
+            AuthUiState.Idle -> {
+                // The UI is in its normal idle state
+            }
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
             onClick = {
-                // 在這裡處理註冊邏輯，例如呼叫你的後端 API
-                // 目前我們只會在 Logcat 中印出資訊
-                println("使用者名稱: $username")
-                println("密碼: $password")
+                if (username.isNotBlank() && password.isNotBlank()) {
+                    val loginRequest = UserRegAndLoginDto(username, password)
+                    authViewModel.login(loginRequest)
+                }
             },
             modifier = Modifier.fillMaxWidth()
         ) {
