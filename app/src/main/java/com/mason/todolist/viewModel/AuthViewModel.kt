@@ -4,8 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mason.todolist.dto.LoginResponseDto
 import com.mason.todolist.dto.UserRegAndLoginDto
-import com.mason.todolist.service.AuthApiService
-import com.mason.todolist.service.AuthRepository
+import com.mason.todolist.repo.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch

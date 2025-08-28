@@ -1,8 +1,9 @@
-package com.mason.todolist.viewModel
+package com.mason.todolist.factory
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.mason.todolist.service.AuthRepository
+import com.mason.todolist.repo.AuthRepository
+import com.mason.todolist.viewModel.AuthViewModel
 
 class AuthViewModelFactory(private val authApiRepository: AuthRepository) : ViewModelProvider.Factory {
 

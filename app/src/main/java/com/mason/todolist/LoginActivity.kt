@@ -18,6 +18,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,40 +28,70 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.mason.todolist.dto.UserRegAndLoginDto
+import com.mason.todolist.factory.AuthViewModelFactory
+import com.mason.todolist.factory.TodoListViewModelFactory
+import com.mason.todolist.repo.AuthRepository
+import com.mason.todolist.repo.TodoListRepository
+import com.mason.todolist.retrofit.RetrofitInstance
 import com.mason.todolist.service.AuthApiService
-import com.mason.todolist.service.AuthRepository
-import com.mason.todolist.service.RetrofitInstance
+import com.mason.todolist.service.TodoListService
 import com.mason.todolist.token.TokenManager
 import com.mason.todolist.ui.theme.TodoListTheme
 import com.mason.todolist.viewModel.AuthUiState
 import com.mason.todolist.viewModel.AuthViewModel
-import com.mason.todolist.viewModel.AuthViewModelFactory
 
 class LoginActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // 取得 Application Context
         val appContext = applicationContext
-        val tokenManager = TokenManager(appContext) // 將 Application Context 傳入
+        val tokenManager = TokenManager(appContext)
 
         // 建立所有依賴物件
         val retrofit = RetrofitInstance.create(tokenManager)
         val authApiService = retrofit.create(AuthApiService::class.java)
         val authRepository = AuthRepository(authApiService, tokenManager)
+        val todoListService = retrofit.create(TodoListService::class.java)
+        val todoListRepository = TodoListRepository(todoListService)
 
         enableEdgeToEdge()
         setContent {
             TodoListTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    LoginScreen(
-                        modifier = Modifier.padding(innerPadding),
-                        authViewModel = viewModel(factory = AuthViewModelFactory(authRepository))
-                    )
+                val navController = rememberNavController()
+
+                // Corrected: NavHost is the single root Composable inside setContent
+                NavHost(navController = navController, startDestination = "login_screen") {
+                    composable("login_screen") {
+                        // Place Scaffold inside the composable for each screen
+                        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                            LoginScreen(
+                                modifier = Modifier.padding(innerPadding),
+                                authViewModel = viewModel(factory = AuthViewModelFactory(authRepository)),
+                                onNavigateToTodoList = {
+                                    navController.navigate("todolist_screen") {
+                                        popUpTo("login_screen") { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
+                    }
+                    composable("todolist_screen") {
+                        // You can also add a Scaffold here if needed for this screen
+                        TodoListScreen(
+                            todoListViewModel = viewModel(
+                                factory = TodoListViewModelFactory(
+                                    todoListRepository
+                                )
+                            )
+                        )
+                    }
                 }
             }
         }
@@ -69,7 +100,8 @@ class LoginActivity : ComponentActivity() {
 
 @Composable
 fun LoginScreen(modifier: Modifier = Modifier,
-                authViewModel: AuthViewModel = viewModel()) {
+                authViewModel: AuthViewModel = viewModel(),
+                onNavigateToTodoList: () -> Unit) {
     val uiState by authViewModel.uiState.collectAsState()
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -116,6 +148,9 @@ fun LoginScreen(modifier: Modifier = Modifier,
                 Text("登入成功！")
                 // You might want to navigate to the main screen here.
                 // For example: navController.navigate("main_screen")
+                LaunchedEffect(Unit) {
+                    onNavigateToTodoList()
+                }
             }
             is AuthUiState.Error -> {
                 // Show an error message
@@ -142,12 +177,4 @@ fun LoginScreen(modifier: Modifier = Modifier,
         }
     }
 
-}
-
-@Preview(showBackground = true)
-@Composable
-fun LoginScreenPreview() {
-    TodoListTheme {
-        LoginScreen()
-    }
 }

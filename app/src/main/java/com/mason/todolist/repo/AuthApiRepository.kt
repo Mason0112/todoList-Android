@@ -1,9 +1,9 @@
-package com.mason.todolist.service
+package com.mason.todolist.repo
 
-import android.content.Context
 import android.util.Log
 import com.mason.todolist.dto.LoginResponseDto
 import com.mason.todolist.dto.UserRegAndLoginDto
+import com.mason.todolist.service.AuthApiService
 import com.mason.todolist.token.TokenManager
 
 class AuthRepository(

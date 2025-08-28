@@ -35,11 +35,11 @@ import com.mason.todolist.viewModel.AuthViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mason.todolist.dto.UserRegAndLoginDto
 import com.mason.todolist.service.AuthApiService
-import com.mason.todolist.service.AuthRepository
-import com.mason.todolist.service.RetrofitInstance
+import com.mason.todolist.repo.AuthRepository
+import com.mason.todolist.retrofit.RetrofitInstance
 import com.mason.todolist.token.TokenManager
 import com.mason.todolist.viewModel.AuthUiState
-import com.mason.todolist.viewModel.AuthViewModelFactory
+import com.mason.todolist.factory.AuthViewModelFactory
 
 class RegisterActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -69,9 +69,9 @@ class RegisterActivity : ComponentActivity() {
 
 @Composable
 fun RegisterScreen(modifier: Modifier = Modifier,
-                   authViewModel: AuthViewModel = viewModel()) {
+                   authViewModel: AuthViewModel? = null ) {
 
-    val uiState by authViewModel.uiState.collectAsState()
+    val uiState = authViewModel?.uiState?.collectAsState()?.value ?: AuthUiState.Idle
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
@@ -120,7 +120,7 @@ fun RegisterScreen(modifier: Modifier = Modifier,
             }
             is AuthUiState.Error -> {
                 // Show an error message
-                val errorMessage = (uiState as AuthUiState.Error).message
+                val errorMessage = uiState.message
                 Text("註冊失敗: $errorMessage", color = MaterialTheme.colorScheme.error)
             }
             AuthUiState.Idle -> {
@@ -134,7 +134,7 @@ fun RegisterScreen(modifier: Modifier = Modifier,
             onClick = {
                 if (username.isNotBlank() && password.isNotBlank()) {
                     val registerRequest = UserRegAndLoginDto(username, password)
-                    authViewModel.register(registerRequest)
+                    authViewModel?.register(registerRequest)
                 }
             },
             modifier = Modifier.fillMaxWidth()
@@ -144,10 +144,11 @@ fun RegisterScreen(modifier: Modifier = Modifier,
     }
 }
 
+// Preview 現在不會傳入 authViewModel
 @Preview(showBackground = true)
 @Composable
 fun RegisterScreenPreview() {
     TodoListTheme {
-        RegisterScreen()
+        RegisterScreen()  // 不傳入 authViewModel
     }
 }

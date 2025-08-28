@@ -1,6 +1,6 @@
-package com.mason.todolist.service
+package com.mason.todolist.retrofit
 
-import com.mason.todolist.AuthInterceptor
+import com.mason.todolist.inrerceptor.AuthInterceptor
 import com.mason.todolist.token.TokenManager
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit

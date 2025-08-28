@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+    xmlns:tools="http://schemas.android.com/tools" >
+
     <uses-permission android:name="android.permission.INTERNET" />
+
     <application
-        android:usesCleartextTraffic="true"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -11,13 +12,18 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.TodoList">
+        android:theme="@style/Theme.TodoList"
+        android:usesCleartextTraffic="true" >
+        <activity
+            android:name=".TodoListActivity"
+            android:exported="false"
+            android:label="@string/title_activity_todo_list"
+            android:theme="@style/Theme.TodoList" />
         <activity
             android:name=".RegisterActivity"
             android:exported="true"
             android:label="@string/title_activity_register"
-            android:theme="@style/Theme.TodoList" >
-        </activity>
+            android:theme="@style/Theme.TodoList" />
         <activity
             android:name=".LoginActivity"
             android:exported="true"
@@ -30,17 +36,10 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".TodoListActivity"
-            android:exported="true"
-            android:label="@string/title_activity_todo_list"
-            android:theme="@style/Theme.TodoList">
-        </activity>
-        <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.TodoList">
-        </activity>
+            android:theme="@style/Theme.TodoList" />
     </application>
 
 </manifest>
