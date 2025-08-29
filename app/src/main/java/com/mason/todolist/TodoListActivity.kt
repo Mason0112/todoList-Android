@@ -4,7 +4,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,22 +29,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.room.Room
 import com.mason.todolist.dto.CreateTodoListDto
-import com.mason.todolist.dto.TodoListDto
 import com.mason.todolist.factory.TodoListViewModelFactory
 import com.mason.todolist.repo.TodoListRepository
 import com.mason.todolist.retrofit.RetrofitInstance
 import com.mason.todolist.service.TodoListService
 import com.mason.todolist.token.TokenManager
 import com.mason.todolist.ui.theme.TodoListTheme
-import com.mason.todolist.viewModel.AuthUiState
 import com.mason.todolist.viewModel.TodoListViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
 
 class TodoListActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,10 +50,16 @@ class TodoListActivity : ComponentActivity() {
         val appContext = applicationContext
         val tokenManager = TokenManager(appContext) // 將 Application Context 傳入
 
+        // 建立 Room 資料庫實例
+        val db = Room.databaseBuilder(
+            appContext,
+            AppDatabase::class.java, "todo-database"
+        ).build()
+
         // 建立所有依賴物件
         val retrofit = RetrofitInstance.create(tokenManager)
         val todoListService = retrofit.create(TodoListService::class.java)
-        val todoListRepository = TodoListRepository(todoListService)
+        val todoListRepository = TodoListRepository(todoListService,db.todoListDao())
         enableEdgeToEdge()
         setContent {
             TodoListTheme {
@@ -80,17 +81,19 @@ class TodoListActivity : ComponentActivity() {
 @Composable
 fun TodoListScreen(
     modifier: Modifier = Modifier,
-    todoListViewModel: TodoListViewModel? = null
+    todoListViewModel: TodoListViewModel
 ) {
 
-    val uiState = todoListViewModel?.uiState?.collectAsState()?.value ?: AuthUiState.Idle
-    val todoList = todoListViewModel?.todoList?.collectAsState()?.value ?: emptyList()
+    // 這裡直接從 ViewModel 的 Flow 收集資料，並使用 `by` 關鍵字
+    val todoList by todoListViewModel.todoList.collectAsState(initial = emptyList())
 
+    // UI 狀態也可以這樣處理
+    val uiState by todoListViewModel.uiState.collectAsState()
 
     var addTodoContent by remember { mutableStateOf("") }
     // Fetch the list of to-do items when the Composable is first launched.
     LaunchedEffect(Unit) {
-        todoListViewModel?.getList()
+        todoListViewModel.getList()
     }
 
     Column(
@@ -120,7 +123,7 @@ fun TodoListScreen(
                         addTodoContent.isNotBlank()
                     ) {
                         val createTodoListDto = CreateTodoListDto(addTodoContent, false)
-                        todoListViewModel?.addItem(createTodoListDto)
+                        todoListViewModel.addItem(createTodoListDto)
                         addTodoContent = ""
                     }
                 },
@@ -153,7 +156,7 @@ fun TodoListScreen(
                     Button(
                         onClick = {
                             val updatedTodoItem = todoItem.copy(completed = !todoItem.completed)
-                            todoListViewModel?.updateItem(
+                            todoListViewModel.updateItem(
                                 todoItem.id,
                                 updatedTodoItem
                             ) // 修正：只需傳入更新後的物件
@@ -173,7 +176,7 @@ fun TodoListScreen(
 
                     OutlinedButton(
                         onClick = {
-                            todoListViewModel?.deleteItem(todoItem.id)
+                            todoListViewModel.deleteItem(todoItem.id)
                         },
                         modifier = Modifier.padding(start = 8.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
@@ -188,13 +191,4 @@ fun TodoListScreen(
         }
     }
 
-}
-
-
-@Preview(showBackground = true)
-@Composable
-fun TodoListScreenPreview() {
-    TodoListTheme {
-        TodoListScreen()
-    }
 }

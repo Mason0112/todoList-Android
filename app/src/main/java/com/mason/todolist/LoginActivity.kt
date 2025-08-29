@@ -34,6 +34,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.room.Room
 import com.mason.todolist.dto.UserRegAndLoginDto
 import com.mason.todolist.factory.AuthViewModelFactory
 import com.mason.todolist.factory.TodoListViewModelFactory
@@ -54,12 +55,18 @@ class LoginActivity : ComponentActivity() {
         val appContext = applicationContext
         val tokenManager = TokenManager(appContext)
 
+        // 建立 Room 資料庫實例
+        val db = Room.databaseBuilder(
+            appContext,
+            AppDatabase::class.java, "todo-database"
+        ).build()
+
         // 建立所有依賴物件
         val retrofit = RetrofitInstance.create(tokenManager)
         val authApiService = retrofit.create(AuthApiService::class.java)
         val authRepository = AuthRepository(authApiService, tokenManager)
         val todoListService = retrofit.create(TodoListService::class.java)
-        val todoListRepository = TodoListRepository(todoListService)
+        val todoListRepository = TodoListRepository(todoListService,db.todoListDao())
 
         enableEdgeToEdge()
         setContent {
@@ -141,24 +148,18 @@ fun LoginScreen(modifier: Modifier = Modifier,
         when (uiState) {
             is AuthUiState.Loading -> {
                 Text("登入中...")
-                // You could also show a CircularProgressIndicator here
             }
             is AuthUiState.Success -> {
-                // Navigate to the next screen or show a success message
                 Text("登入成功！")
-                // You might want to navigate to the main screen here.
-                // For example: navController.navigate("main_screen")
                 LaunchedEffect(Unit) {
                     onNavigateToTodoList()
                 }
             }
             is AuthUiState.Error -> {
-                // Show an error message
                 val errorMessage = (uiState as AuthUiState.Error).message
                 Text("登入失敗: $errorMessage", color = MaterialTheme.colorScheme.error)
             }
             AuthUiState.Idle -> {
-                // The UI is in its normal idle state
             }
         }
 
