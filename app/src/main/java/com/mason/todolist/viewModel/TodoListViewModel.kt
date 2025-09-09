@@ -22,16 +22,14 @@ class TodoListViewModel(private val todoListRepository: TodoListRepository) : Vi
     private val _uiState = MutableStateFlow<TodoListUiState>(TodoListUiState.Idle)
     val uiState: StateFlow<TodoListUiState> = _uiState
 
+    //準備Flow List給Activity使用
     val todoList = todoListRepository.todoList
 
     init {
-        // We start a coroutine to fetch the list from the network
-        // and put it into the Room database.
-        // The UI, in the meantime, might show old data from Room,
-        // which is a good user experience.
         getList()
     }
 
+    //先把資料放進去Room
     fun getList() {
         viewModelScope.launch {
             _uiState.value = TodoListUiState.Loading

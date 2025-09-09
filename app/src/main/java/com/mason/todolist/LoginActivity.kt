@@ -73,10 +73,8 @@ class LoginActivity : ComponentActivity() {
             TodoListTheme {
                 val navController = rememberNavController()
 
-                // Corrected: NavHost is the single root Composable inside setContent
                 NavHost(navController = navController, startDestination = "login_screen") {
                     composable("login_screen") {
-                        // Place Scaffold inside the composable for each screen
                         Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                             LoginScreen(
                                 modifier = Modifier.padding(innerPadding),
@@ -90,7 +88,6 @@ class LoginActivity : ComponentActivity() {
                         }
                     }
                     composable("todolist_screen") {
-                        // You can also add a Scaffold here if needed for this screen
                         TodoListScreen(
                             todoListViewModel = viewModel(
                                 factory = TodoListViewModelFactory(

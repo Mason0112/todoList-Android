@@ -84,10 +84,9 @@ fun TodoListScreen(
     todoListViewModel: TodoListViewModel
 ) {
 
-    // 這裡直接從 ViewModel 的 Flow 收集資料，並使用 `by` 關鍵字
+    // 這裡直接從 ViewModel 的 Flow 收集資料，用來追蹤是不是有更動
     val todoList by todoListViewModel.todoList.collectAsState(initial = emptyList())
-
-    // UI 狀態也可以這樣處理
+    // UI 狀態
     val uiState by todoListViewModel.uiState.collectAsState()
 
     var addTodoContent by remember { mutableStateOf("") }
